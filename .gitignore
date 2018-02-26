@@ -99,3 +99,11 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# database, database backup
+*.db
+*.backup
+
+# tmp files
+*.swp
+
