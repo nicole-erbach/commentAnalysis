@@ -58,7 +58,7 @@ def connectToOrCreateDatabase(databaseFilename):
     """
     cursor.execute(sqlCommand)
 
-    sqlCommandCreate = """ 
+    sqlCommand = """ 
     CREATE TABLE IF NOT EXISTS citations (
     id INTEGER PRIMARY KEY,
     originCommentId INTEGER,
@@ -225,6 +225,9 @@ def getVisitListToFindCitations(connection):
     # reference time and @
 def visitArticleToFindCitations(connection, articleId):
 
+    minCiteLength = 40
+    minCiteLengthSolo = 80
+
     cursor = connection.cursor()
 
     sqlCommandRead = """
@@ -260,7 +263,7 @@ def visitArticleToFindCitations(connection, articleId):
             # get longest common substring (50 characters+)
             seqM = SequenceMatcher(None, post, text[j]).find_longest_match(0, len(post), 0, len(text[j]))
             acc = 0
-            if seqM.size > 50:
+            if seqM.size > minCiteLength:
                 if seqM.a + seqM.size == len(post): continue 
                 # check for quotas,
                 # occurrence of authorname
@@ -269,7 +272,7 @@ def visitArticleToFindCitations(connection, articleId):
                 if (post[seqM.a-1] == '\"' and post[seqM.a + seqM.size] == '\"' or 
                         comments[j][-1] in post or 
                         comments[j][1][-5:] in post or 
-                        seqM.size > 100):
+                        seqM.size > minCiteLengthSolo):
        
                     cursor.execute(sqlCommandWrite, [comments[j][0], comments[i][0], seqM.a, seqM.size])
 
@@ -286,6 +289,10 @@ def visitArticleToFindCitations(connection, articleId):
             
                 # check for occurrence of @ authornames of earlier posts
                 if "@ " + comments[j][-1] in post:
+                    acc += 1
+            
+                # check for occurrence of authornames@ of earlier posts (userId 200s way)
+                if comments[j][-1] + "@" in post:
                     acc += 1
             
                 # check for occurrence of time of earlier posts
